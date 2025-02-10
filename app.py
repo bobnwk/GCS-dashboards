@@ -87,5 +87,7 @@ def update_chart(selected_months):
     return fig
 
 # Run server
+server = app.server  # Expose the Flask server for Gunicorn
+
 if __name__ == '__main__':
     app.run_server(debug=True)
