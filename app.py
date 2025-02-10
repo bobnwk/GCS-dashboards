@@ -1,5 +1,5 @@
 import dash
-from dash import dcc, html, Input, Output, Dash, callback_context
+from dash import dcc, html, Input, Output, Dash
 import pandas as pd
 import plotly.express as px
 import dash_uploader as du
@@ -7,6 +7,8 @@ import os
 
 # Initialize Dash app
 app = Dash(__name__)
+server = app.server  # Expose the Flask server for Gunicorn
+
 du.configure_upload(app, "./uploads")
 
 # Layout
@@ -38,56 +40,28 @@ app.layout = html.Div([
     Input('upload-data', 'fileNames')
 )
 def load_data(isCompleted, fileNames):
-    if not isCompleted:
-        return [], []
-    
-    file_path = os.path.join("./uploads", fileNames[0])
-    global df
-    df = pd.read_excel(file_path, sheet_name="first line call")
-    df["Call Date"] = pd.to_datetime(df["Call Date"])
-    df["Month"] = df["Call Date"].dt.strftime("%Y-%m")
-    
-    customer_mapping = {
-        "NewCold | WHS Piacenza": "PIA",
-        "NewCold | WHS Tacoma": "TAC",
-        "NewCold | WHS Lebanon": "LEB",
-        "NewCold | WHS Atlanta": "ATL"
-    }
-    df["Customer Short"] = df["Customer (Caller)"].map(customer_mapping)
-    
-    months = sorted(df["Month"].unique(), reverse=True)
-    return [{'label': month, 'value': month} for month in months], months[:3]
-import os
-
-@app.callback(
-    Output('month-selector', 'options'),
-    Output('month-selector', 'value'),
-    Input('upload-data', 'isCompleted'),
-    Input('upload-data', 'fileNames')
-)
-def load_data(isCompleted, fileNames):
     if not isCompleted or not fileNames:
         print("❌ No file uploaded.")
         return [], []
 
     file_path = os.path.join("./uploads", fileNames[0])
     
-    # Debugging: Check if file exists
+    # Debugging: Check if file exists and print upload directory contents
+    print(f"📁 Checking uploads directory: {os.listdir('./uploads')}")
     if not os.path.exists(file_path):
         print(f"❌ File not found: {file_path}")
         return [], []
-
+    
     print(f"✅ File uploaded: {file_path}")
 
-    # Read the Excel file
     try:
         global df
-        df = pd.read_excel(file_path, sheet_name="first line call")  # Adjust sheet name if needed
+        df = pd.read_excel(file_path, sheet_name="first line call")  # Ensure correct sheet name
         df["Call Date"] = pd.to_datetime(df["Call Date"])
         df["Month"] = df["Call Date"].dt.strftime("%Y-%m")
-
+        
         # Debugging: Check the first few rows of the dataframe
-        print(df.head())
+        print("📝 First few rows of the DataFrame:\n", df.head())
 
         customer_mapping = {
             "NewCold | WHS Piacenza": "PIA",
@@ -98,12 +72,13 @@ def load_data(isCompleted, fileNames):
         df["Customer Short"] = df["Customer (Caller)"].map(customer_mapping)
 
         months = sorted(df["Month"].unique(), reverse=True)
+        print(f"📅 Available months: {months}")
+
         return [{'label': month, 'value': month} for month in months], months[:3]
 
     except Exception as e:
         print(f"❌ Error loading data: {str(e)}")
         return [], []
-
 
 # Callback to update graph
 @app.callback(
@@ -134,9 +109,5 @@ def update_chart(selected_months):
     return fig
 
 # Run server
-server = app.server  # Expose the Flask server for Gunicorn
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run_server(debug=True, host="0.0.0.0", port=8080)
-
-
