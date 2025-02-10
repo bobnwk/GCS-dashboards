@@ -1,5 +1,5 @@
 import dash
-from dash import dcc, html, Input, Output, Dash, callback_context
+from dash import dcc, html, Input, Output, Dash
 import pandas as pd
 import plotly.express as px
 import dash_uploader as du
@@ -60,6 +60,9 @@ def load_data(isCompleted, fileNames):
         df["Customer Short"] = df["Customer (Caller)"].map(customer_mapping)
 
         months = sorted(df["Month"].unique(), reverse=True)
+
+        print(f"📅 Available months: {months}")
+
         return [{'label': month, 'value': month} for month in months], months[:6]
 
     except Exception as e:
@@ -102,11 +105,15 @@ def update_chart(selected_months):
 
     print(f"📊 Processed Data for Chart:\n{grouped_data.head()}")
 
+    # Correct the melt function
+    melted_data = grouped_data.melt(id_vars=["Caller name"], var_name="Category", value_name="value")
+
     # Create bar chart
     fig = px.bar(
-        grouped_data.melt(id_vars="Caller name", value_vars=["ATL", "LEB", "PIA", "TAC", "Unjustified Calls"]),
-        x="Caller name", y="value", color="variable",
-        color_discrete_map={"ATL": "blue", "LEB": "yellow", "PIA": "green", "TAC": "purple", "Unjustified Calls": "red"},
+        melted_data,
+        x="Caller name", 
+        y="value", 
+        color="Category",
         labels={"value": "Number of Calls", "Caller name": "Caller"},
         title=f"Top 20 Callers - {', '.join(selected_months)}"
     )
