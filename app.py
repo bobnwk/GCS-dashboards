@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.express as px
 import dash_uploader as du
 import os
+import glob
 
 # Initialize Dash app
 app = Dash(__name__)
@@ -44,14 +45,13 @@ def load_data(isCompleted, fileNames):
         print("❌ No file uploaded.")
         return [], []
 
-    file_path = os.path.join("./uploads", fileNames[0])
-    
-    # Debugging: Check if file exists and print upload directory contents
-    print(f"📁 Checking uploads directory: {os.listdir('./uploads')}")
-    if not os.path.exists(file_path):
-        print(f"❌ File not found: {file_path}")
+    # Find the uploaded file dynamically
+    uploaded_files = glob.glob("./uploads/data_upload/*")  # Dash Uploader stores files here
+    if not uploaded_files:
+        print("❌ No uploaded files found in ./uploads/data_upload/")
         return [], []
-    
+
+    file_path = uploaded_files[0]  # Use the first uploaded file
     print(f"✅ File uploaded: {file_path}")
 
     try:
