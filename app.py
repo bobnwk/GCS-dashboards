@@ -57,6 +57,53 @@ def load_data(isCompleted, fileNames):
     
     months = sorted(df["Month"].unique(), reverse=True)
     return [{'label': month, 'value': month} for month in months], months[:3]
+import os
+
+@app.callback(
+    Output('month-selector', 'options'),
+    Output('month-selector', 'value'),
+    Input('upload-data', 'isCompleted'),
+    Input('upload-data', 'fileNames')
+)
+def load_data(isCompleted, fileNames):
+    if not isCompleted or not fileNames:
+        print("❌ No file uploaded.")
+        return [], []
+
+    file_path = os.path.join("./uploads", fileNames[0])
+    
+    # Debugging: Check if file exists
+    if not os.path.exists(file_path):
+        print(f"❌ File not found: {file_path}")
+        return [], []
+
+    print(f"✅ File uploaded: {file_path}")
+
+    # Read the Excel file
+    try:
+        global df
+        df = pd.read_excel(file_path, sheet_name="first line call")  # Adjust sheet name if needed
+        df["Call Date"] = pd.to_datetime(df["Call Date"])
+        df["Month"] = df["Call Date"].dt.strftime("%Y-%m")
+
+        # Debugging: Check the first few rows of the dataframe
+        print(df.head())
+
+        customer_mapping = {
+            "NewCold | WHS Piacenza": "PIA",
+            "NewCold | WHS Tacoma": "TAC",
+            "NewCold | WHS Lebanon": "LEB",
+            "NewCold | WHS Atlanta": "ATL"
+        }
+        df["Customer Short"] = df["Customer (Caller)"].map(customer_mapping)
+
+        months = sorted(df["Month"].unique(), reverse=True)
+        return [{'label': month, 'value': month} for month in months], months[:3]
+
+    except Exception as e:
+        print(f"❌ Error loading data: {str(e)}")
+        return [], []
+
 
 # Callback to update graph
 @app.callback(
