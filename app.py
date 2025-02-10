@@ -67,7 +67,8 @@ def load_data(isCompleted, fileNames):
             "NewCold | WHS Piacenza": "PIA",
             "NewCold | WHS Tacoma": "TAC",
             "NewCold | WHS Lebanon": "LEB",
-            "NewCold | WHS Atlanta": "ATL"
+            "NewCold | WHS Atlanta": "ATL",
+            "NewCold | WHS Montauban": "MTB"
         }
         df["Customer Short"] = df["Customer (Caller)"].map(customer_mapping)
 
