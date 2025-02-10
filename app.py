@@ -87,9 +87,22 @@ def load_data(isCompleted, fileNames):
 )
 def update_chart(selected_months):
     if not selected_months:
+        print("❌ No months selected.")
         return px.bar(title="Select a month to display data")
-    
+
+    print(f"📅 Selected months: {selected_months}")
+
+    if 'df' not in globals():
+        print("❌ DataFrame not found. Ensure the file is uploaded and loaded properly.")
+        return px.bar(title="Data not loaded. Please upload a file.")
+
     filtered_df = df[df["Month"].isin(selected_months)]
+    print("🔍 Filtered Data:\n", filtered_df.head())
+
+    if filtered_df.empty:
+        print("❌ No data found for selected months.")
+        return px.bar(title="No data available for selected months.")
+
     calls_per_caller = filtered_df["Caller name"].value_counts().head(20)
     top_20_df = filtered_df[filtered_df["Caller name"].isin(calls_per_caller.index)]
     
@@ -97,6 +110,8 @@ def update_chart(selected_months):
     unjustified_calls = top_20_df[top_20_df["Justified? (24/7)"] == "No"].groupby(["Caller name"]).size()
     grouped_data["Unjustified Calls"] = unjustified_calls.fillna(0)
     grouped_data = grouped_data.reset_index()
+
+    print("📊 Processed Data for Chart:\n", grouped_data.head())
     
     fig = px.bar(
         grouped_data.melt(id_vars="Caller name", value_vars=["ATL", "LEB", "PIA", "TAC", "Unjustified Calls"]),
